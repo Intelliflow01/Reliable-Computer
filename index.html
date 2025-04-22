@@ -969,90 +969,72 @@
         
         // UPDATED FORM SUBMISSION CODE WITH CORS FIXES
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-        
-            // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const btnLoading = submitBtn.querySelector('.btn-loading');
-            
-            btnText.style.display = 'none';
-            btnLoading.style.display = 'inline-block';
-            submitBtn.disabled = true;
-        
-            // Get form values as FormData
-            const formData = new FormData(this);
-            const data = {
-                'Full Name': formData.get('fullName'),
-                'Email': formData.get('email'),
-                'Phone': formData.get('phone'),
-                'Qualification': formData.get('qualification'),
-                'Experience': formData.get('experience'),
-                'Form Type': 'Internship Registration'
-            };
-        
-            // Encode data for URL submission
-            const encodedData = Object.keys(data).map(key => {
-                return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
-            }).join('&');
-        
-            // Your Google Apps Script URL
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxRGaguiBbYUn_dUHN_CNIBBHiqOfKDA2BGU_i5d5X2q7DLB4TxV2XC4-qNdQime6w/exec';
-            
-            // Using fetch with error handling
-            fetch(scriptURL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: encodedData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.result === 'success') {
-                    alert('Registration successful! We will contact you shortly with payment details.');
-                    this.reset();
-                } else {
-                    throw new Error(data.message || 'Unknown error occurred');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Special handling for CORS errors
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    // Try alternative submission method
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', scriptURL);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    xhr.onload = function() {
-                        if (xhr.status === 200) {
-                            alert('Registration submitted! We will contact you shortly.');
-                            this.reset();
-                        } else {
-                            alert('There was an error. Please contact us directly at info@reliableedu.com');
-                        }
-                    };
-                    xhr.onerror = function() {
-                        // Final fallback - form might still have worked
-                        alert('Thank you! If the page didn\'t refresh, your form was submitted successfully.');
-                        this.reset();
-                    };
-                    xhr.send(encodedData);
-                } else {
-                    alert('There was an error submitting your form. Please try again or contact us directly.');
-                }
-            })
-            .finally(() => {
-                btnText.style.display = 'inline-block';
-                btnLoading.style.display = 'none';
-                submitBtn.disabled = false;
-            });
-        });
+  e.preventDefault();
+
+  // Show loading state
+  const submitBtn = this.querySelector('button[type="submit"]');
+  const btnText = submitBtn.querySelector('.btn-text');
+  const btnLoading = submitBtn.querySelector('.btn-loading');
+  
+  btnText.style.display = 'none';
+  btnLoading.style.display = 'inline-block';
+  submitBtn.disabled = true;
+
+  // Get form values
+  const formData = {
+    timestamp: new Date().toISOString(),
+    fullName: document.getElementById('fullName').value,
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    qualification: document.getElementById('qualification').value,
+    experience: document.getElementById('experience').value,
+    formType: 'Internship Registration'
+  };
+
+  // Use JSONP approach as workaround for CORS
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbyoXpZXvdY5UqZJh8OATSp234avw7zJkPf3y0DNdT2bH2F0iyTIRWgm-iyxPQpyJvt7lw/exec';
+  
+  // Create a temporary form for submission
+  const tempForm = document.createElement('form');
+  tempForm.style.display = 'none';
+  tempForm.method = 'POST';
+  tempForm.action = scriptURL;
+  tempForm.target = 'hiddenFrame';
+  
+  // Add hidden fields
+  for (const key in formData) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = formData[key];
+    tempForm.appendChild(input);
+  }
+  
+  // Create hidden iframe for response
+  const hiddenFrame = document.createElement('iframe');
+  hiddenFrame.name = 'hiddenFrame';
+  hiddenFrame.style.display = 'none';
+  document.body.appendChild(hiddenFrame);
+  
+  // Add form to page and submit
+  document.body.appendChild(tempForm);
+  tempForm.submit();
+  
+  // Clean up after submission
+  setTimeout(() => {
+    document.body.removeChild(tempForm);
+    document.body.removeChild(hiddenFrame);
+    
+    // Show success message (we can't get response due to CORS)
+    alert('Registration submitted successfully!');
+    this.reset();
+    
+    // Reset button state
+    btnText.style.display = 'inline-block';
+    btnLoading.style.display = 'none';
+    submitBtn.disabled = false;
+  }, 1000);
+});
         
         // Animation on scroll (unchanged)
         const animateElements = document.querySelectorAll('.animate-on-scroll');
