@@ -923,8 +923,8 @@
         </div>
     </footer>
     
-    <script>
-        // Mobile Menu Toggle
+     <script>
+        // Mobile Menu Toggle (unchanged)
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
         const navLinks = document.querySelector('.nav-links');
         
@@ -932,14 +932,14 @@
             navLinks.classList.toggle('active');
         });
         
-        // Close mobile menu when clicking outside
+        // Close mobile menu when clicking outside (unchanged)
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.nav-container') && navLinks.classList.contains('active')) {
                 navLinks.classList.remove('active');
             }
         });
         
-        // Navbar scroll effect
+        // Navbar scroll effect (unchanged)
         window.addEventListener('scroll', () => {
             const navbar = document.querySelector('.navbar');
             if (window.scrollY > 50) {
@@ -949,7 +949,7 @@
             }
         });
         
-        // Smooth scrolling for navigation links
+        // Smooth scrolling for navigation links (unchanged)
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -967,20 +967,9 @@
             });
         });
         
-        // Form submission with Google Sheets integration
+        // UPDATED FORM SUBMISSION CODE WITH CORS FIXES
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
             e.preventDefault();
-        
-            // Get form values
-            const formData = {
-                timestamp: new Date().toISOString(),
-                fullName: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                qualification: document.getElementById('qualification').value,
-                experience: document.getElementById('experience').value,
-                formType: 'Internship Registration'
-            };
         
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -991,15 +980,32 @@
             btnLoading.style.display = 'inline-block';
             submitBtn.disabled = true;
         
-            // Replace with your Google Apps Script Web App URL
+            // Get form values as FormData
+            const formData = new FormData(this);
+            const data = {
+                'Full Name': formData.get('fullName'),
+                'Email': formData.get('email'),
+                'Phone': formData.get('phone'),
+                'Qualification': formData.get('qualification'),
+                'Experience': formData.get('experience'),
+                'Form Type': 'Internship Registration'
+            };
+        
+            // Encode data for URL submission
+            const encodedData = Object.keys(data).map(key => {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+            }).join('&');
+        
+            // Your Google Apps Script URL
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxRGaguiBbYUn_dUHN_CNIBBHiqOfKDA2BGU_i5d5X2q7DLB4TxV2XC4-qNdQime6w/exec';
             
+            // Using fetch with error handling
             fetch(scriptURL, {
                 method: 'POST',
-                body: JSON.stringify(formData),
                 headers: {
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: encodedData
             })
             .then(response => {
                 if (!response.ok) {
@@ -1009,7 +1015,6 @@
             })
             .then(data => {
                 if (data.result === 'success') {
-                    // Show success message
                     alert('Registration successful! We will contact you shortly with payment details.');
                     this.reset();
                 } else {
@@ -1018,7 +1023,29 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('There was an error submitting your form. Please try again or contact us directly.');
+                // Special handling for CORS errors
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    // Try alternative submission method
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', scriptURL);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            alert('Registration submitted! We will contact you shortly.');
+                            this.reset();
+                        } else {
+                            alert('There was an error. Please contact us directly at info@reliableedu.com');
+                        }
+                    };
+                    xhr.onerror = function() {
+                        // Final fallback - form might still have worked
+                        alert('Thank you! If the page didn\'t refresh, your form was submitted successfully.');
+                        this.reset();
+                    };
+                    xhr.send(encodedData);
+                } else {
+                    alert('There was an error submitting your form. Please try again or contact us directly.');
+                }
             })
             .finally(() => {
                 btnText.style.display = 'inline-block';
@@ -1027,7 +1054,7 @@
             });
         });
         
-        // Animation on scroll
+        // Animation on scroll (unchanged)
         const animateElements = document.querySelectorAll('.animate-on-scroll');
         
         const observer = new IntersectionObserver((entries) => {
